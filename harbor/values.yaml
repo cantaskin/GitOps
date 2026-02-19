@@ -1,0 +1,24 @@
+expose:
+  type: nodePort
+  tls:
+    enabled: false
+  nodePort:
+    ports:
+      http:
+        nodePort: 30002
+
+externalURL: http://localhost:30002
+
+harborAdminPassword: "Harbor12345"
+
+persistence:
+  enabled: false
+
+trivy:
+  enabled: true
+
+metrics:
+  enabled: false
+
+cache:
+  enabled: false

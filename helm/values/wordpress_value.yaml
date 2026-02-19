@@ -1,0 +1,30 @@
+global:
+  security:
+    allowInsecureImages: true
+  imageRegistry: 172.30.67.51:30002
+
+image:
+  repository: library/wordpress
+  tag: "latest"
+
+mariadb:
+  enabled: true
+  image:
+    repository: bitnami/mariadb
+    tag: latest
+  auth:
+    database: bitnami_wordpress
+    username: bn_wordpress
+    rootPassword: "RootSifre123!"
+    password: "Sifre123!"
+
+ingress:
+  enabled: true
+  hostname: wordpress.local
+  tls: true
+  extraTls:
+    - hosts:
+        - wordpress.local
+      secretName: wordpress-tls-secret
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"

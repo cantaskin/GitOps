@@ -1,0 +1,58 @@
+name: Deploy WordPress to Harbor
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'helm/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: arc-runner-set
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+      
+      - name: Docker Login to Harbor
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login 172.30.67.51:30002 \
+            -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
+
+      - name: Pull and Push Images
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          
+          docker pull bitnami/wordpress:latest
+          docker tag bitnami/wordpress:latest 172.30.67.51:30002/library/wordpress:${SHORT_SHA}
+          docker tag bitnami/wordpress:latest 172.30.67.51:30002/library/wordpress:latest
+          docker push 172.30.67.51:30002/library/wordpress:${SHORT_SHA}
+          docker push 172.30.67.51:30002/library/wordpress:latest
+
+          docker pull bitnami/mariadb:latest
+          docker tag bitnami/mariadb:latest 172.30.67.51:30002/bitnami/mariadb:latest
+          docker push 172.30.67.51:30002/bitnami/mariadb:latest
+
+      - name: Update Image Tag in Values
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          # values.yaml içindeki image: altındaki tag: satırını günceller
+          sed -i "s/^  tag:.*/  tag: \"${SHORT_SHA}\"/" helm/values/wordpress_value.yaml
+          cat helm/values/wordpress_value.yaml
+
+      - name: Commit and Push Changes
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}
+          git add helm/values/wordpress_value.yaml
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "ci: update wordpress image tag to ${SHORT_SHA} [skip ci]"
+          git push origin main
