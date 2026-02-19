@@ -5,7 +5,7 @@ global:
 
 image:
   repository: library/wordpress
-  tag: "latest"
+  tag: "0f62776"
 
 mariadb:
   enabled: true
