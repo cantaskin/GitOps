@@ -1,6 +1,6 @@
 githubConfigUrl: https://github.com/cantaskin/GitOps
 githubConfigSecret:
-  github_token: ${GITHUB_TOKEN}
+  github_token: ${{ secrets.GH_PAT }}
 
 
 template:
